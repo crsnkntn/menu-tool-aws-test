@@ -14,13 +14,13 @@ from source.nlp_functions import informed_deletion
 import time
 
 
-
 class Crawler:
     def __init__(self, base_url, max_depth=3, max_threads=5):
         self.base_url = base_url
         self.max_depth = max_depth
         self.visited = {}
-        self.all_links = set()
+        self.relevant_links = set()
+        self.pdf_links = set()
         self.lock = Lock()  # Protect shared resources
         self.max_threads = max_threads
 
@@ -28,6 +28,8 @@ class Crawler:
         """Set up a new Selenium WebDriver instance."""
         chrome_options = Options()
         chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--no-sandbox")
         return webdriver.Chrome(
             service=Service(ChromeDriverManager().install()),
             options=chrome_options
@@ -35,7 +37,7 @@ class Crawler:
 
     def fetch_web_page(self, url):
         """Fetch and render a web page using Selenium."""
-        driver = self.create_driver()  # Create a new driver instance for this thread
+        driver = self.create_driver()
         try:
             print(f"Fetching: {url}")
             driver.get(url)
@@ -53,7 +55,7 @@ class Crawler:
             print(f"Error fetching the URL {url}: {e}")
             return None
         finally:
-            driver.quit()  # Close the WebDriver instance
+            driver.quit()
 
     def extract_links(self, base_url, html_content):
         """Extract all links from the given HTML content."""
@@ -66,14 +68,14 @@ class Crawler:
         return links
 
     def crawl_page(self, url, depth):
-        """Crawl a single page and extract links."""
+        """Crawl a single page and extract relevant links and PDFs."""
         if url in self.visited and self.visited[url] <= depth:
             return
 
         if depth > self.max_depth:
             return
 
-        with self.lock:  # Protect shared resource
+        with self.lock:
             self.visited[url] = depth
 
         html_content = self.fetch_web_page(url)
@@ -82,48 +84,46 @@ class Crawler:
 
         links = self.extract_links(url, html_content)
 
-        with self.lock:  # Protect shared resource
-            self.all_links.update(links)
+        # Identify PDF links
+        pdf_links = {link for link in links if link.lower().endswith('.pdf')}
+        with self.lock:
+            self.pdf_links.update(pdf_links)
 
-        return [(link, depth + 1) for link in links if urlparse(link).netloc == urlparse(self.base_url).netloc]
+        # Identify relevant links
+        relevant_links = informed_deletion(
+            list(links),
+            f"links that may contain restaurant menu information for {self.base_url}",
+            "certain"
+        )
+        with self.lock:
+            self.relevant_links.update(relevant_links)
+
+        return [(link, depth + 1) for link in relevant_links if urlparse(link).netloc == urlparse(self.base_url).netloc]
 
     def crawl(self):
-        """Crawl the website using multithreading."""
+        """Crawl the website using multithreading, focusing only on relevant links."""
         to_crawl = [(self.base_url, 0)]
         with ThreadPoolExecutor(max_workers=self.max_threads) as executor:
             while to_crawl:
                 futures = {executor.submit(self.crawl_page, url, depth): (url, depth) for url, depth in to_crawl}
-                to_crawl = []  # Reset for the next iteration
+                to_crawl = []
 
                 for future in as_completed(futures):
                     result = future.result()
                     if result:
                         to_crawl.extend(result)
 
-    def get_links(self):
-        """Categorize and return all links, PDF links, and relevant links."""
-        pdf_links = [link for link in self.all_links if link.lower().endswith('.pdf')]
-        relevant_links = informed_deletion(
-            list(self.all_links),
-            f"links that may contain restaurant menu information for {self.base_url}",
-            "certain"
-        )
-        return self.all_links, pdf_links, relevant_links
-
-    def close(self):
-        """Close the Selenium WebDriver."""
-        self.driver.quit()
-
+    def get_results(self):
+        """Return all visited links, relevant links, and PDF links."""
+        return self.visited, self.relevant_links, self.pdf_links
 
 # Example usage
 if __name__ == "__main__":
     base_url = "https://bigboy.com"
     crawler = Crawler(base_url)
     crawler.crawl()
-    all_links, pdf_links, relevant_links = crawler.get_links()
+    visited_links, relevant_links, pdf_links = crawler.get_results()
 
-    print(f"All Links: {all_links}")
-    print(f"PDF Links: {len(pdf_links)}")
+    print(f"Visited Links: {len(visited_links)}")
     print(f"Relevant Links: {len(relevant_links)}")
-
-    crawler.close()
+    print(f"PDF Links: {len(pdf_links)}")
