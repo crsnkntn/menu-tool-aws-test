@@ -9,7 +9,10 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
+from source.nlp_functions import informed_deletion
+
 import time
+
 
 
 class Crawler:
