@@ -9,7 +9,7 @@ env:
   ECR_REPOSITORY: menu-tool               # ECR repository name
   ECS_SERVICE: host-menu-gen-service      # ECS service name
   ECS_CLUSTER: menu-tool                  # ECS cluster name
-  ECS_TASK_DEFINITION: task-definition.json  # Task definition file path
+  ECS_TASK_DEFINITION: .aws/task-definition.json  # Task definition file path
   CONTAINER_NAME: flask-container         # Container name in task definition
 
 jobs:
