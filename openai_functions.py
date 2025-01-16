@@ -1,10 +1,15 @@
 from typing import List, Dict, Any
-from types import InformedDeletionIndices, MenuItemLarge, MenuItemSmall, SmallResponse, LargeResponse
+from lib_types import InformedDeletionIndices, MenuItemLarge, MenuItemSmall, SmallResponse, LargeResponse
+from openai import OpenAI
+from dotenv import load_dotenv
 
+# Create the client and set the model
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 gpt_model = "gpt-4o-mini"
 
+
 def informed_deletion(
-    client, 
     uncleaned: List[str], 
     topic: str,
     strictness: str
@@ -36,7 +41,7 @@ def informed_deletion(
         return []
 
 
-def generate_items(client, chunk: str) -> List[Dict[str, Any]]:
+def generate_items(chunk: str) -> List[Dict[str, Any]]:
     prompt_template = (
         "The following text is scraped from a restaurant's website. Some of the content may include information about menu items, "
         "but most of it may not be relevant. Your task is to identify and extract details about the menu items from this text. "
@@ -69,7 +74,7 @@ def generate_items(client, chunk: str) -> List[Dict[str, Any]]:
         return []
 
 
-def expand_item(client, small_item: MenuItemSmall) -> MenuItemLarge:
+def expand_item(small_item: MenuItemSmall) -> MenuItemLarge:
     prompt_template = (
         "Expand the following small-format menu item into a detailed large-format menu item. "
         "Include fields: menuType, itemType, foodCategoryId, flashcardBack, dietary, allergens, "

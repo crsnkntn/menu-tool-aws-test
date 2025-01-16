@@ -1,20 +1,11 @@
 from crawler import Crawler
 from openai_functions import process_pdf, process_urls, chunk_text_data
 from types import MenuItemSmall, MenuItemLarge
-from openai import OpenAI
-import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 
 class ResponseHandler:
     def __init__(self, base_url: str):
         self.url = base_url
-        # Initialize OpenAI client with API key
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
     def handle_request(self):
         crawler = Crawler(self.url)
         print(f"Crawling URL: {self.url}")
@@ -38,13 +29,13 @@ class ResponseHandler:
         for i, chunk in enumerate(chunks):
             print(f"Processing chunk #{i + 1}/{len(chunks)}")
             # Use the generate_items function
-            chunk_items = generate_items(self.client, chunk)
+            chunk_items = generate_items(chunk)
             items.extend([MenuItemSmall(**item) for item in chunk_items])
 
         menu_items = []
         for item in items:
             # Use the expand_item function
-            expanded_item = expand_item(self.client, item)
+            expanded_item = expand_item(item)
             if isinstance(expanded_item, MenuItemLarge):
                 menu_items.append(expanded_item)
             else:

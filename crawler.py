@@ -22,8 +22,6 @@ class Crawler:
 
         load_dotenv()
 
-        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-
         print(f"Initialized Crawler with start_url: {start_url} and max_depth: {max_depth}")
 
     def create_driver(self):
@@ -124,7 +122,6 @@ class Crawler:
 
         # Identify relevant links
         relevant_links = informed_deletion(
-            self.client,
             list(links),
             f"links that may contain restaurant menu information for {self.start_url}",
             "certain"

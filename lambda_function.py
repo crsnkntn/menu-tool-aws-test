@@ -2,11 +2,12 @@ import json
 import boto3
 import uuid
 from botocore.exceptions import ClientError
-from types import MenuItemLarge
+from lib_types import MenuItemLarge
 
 # Initialize S3 client
 s3_client = boto3.client("s3")
 BUCKET_NAME = "your-s3-bucket-name"  # Replace with your S3 bucket name
+
 
 def new_menu_req(data):
     """

@@ -10,7 +10,7 @@ from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 from collections import deque
-from source.nlp_functions import informed_deletion
+from openai_functions import informed_deletion
 
 # Set up Selenium WebDriver with Chrome
 chrome_options = Options()
