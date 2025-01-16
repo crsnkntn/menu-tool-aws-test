@@ -6,7 +6,7 @@ from lib_types import MenuItemLarge
 
 # Initialize S3 client
 s3_client = boto3.client("s3")
-BUCKET_NAME = "your-s3-bucket-name"  # Replace with your S3 bucket name
+BUCKET_NAME = "menu-tool-bucket"
 
 
 def new_menu_req(data):
@@ -133,6 +133,9 @@ def load_all_menus():
     return {"statusCode": 200, "body": json.dumps({"status": "success", "menus": menus})}
 
 
+def get_test_str():
+    {"statusCode": 200, "body": json.dumps({"status": "success", "menus": "THIS IS A MENU"})}
+
 def lambda_handler(event, context):
     """
     Main Lambda handler function.
@@ -149,6 +152,8 @@ def lambda_handler(event, context):
             return new_menu_req(body)
         elif path == "/get-status" and http_method == "GET":
             return get_status(query_params)
+        elif path == "/test" and http_method == "GET":
+            return get_test_str()
         elif path == "/save-menu" and http_method == "POST":
             return save_menu(body)
         elif path == "/update-menu" and http_method == "PUT":
