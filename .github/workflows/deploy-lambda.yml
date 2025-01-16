@@ -24,8 +24,8 @@ jobs:
       # Step 3: Install dependencies
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           pip install -r requirements.txt -t package
+          python -m pip install --upgrade pip
           cd package && zip -r ../lambda_function.zip . && cd ..
 
       # Step 4: Configure AWS credentials
@@ -40,5 +40,5 @@ jobs:
       - name: Deploy Lambda
         run: |
           aws lambda update-function-code \
-            --function-name YOUR_LAMBDA_FUNCTION_NAME \
+            --function-name menu-tool-function \
             --zip-file fileb://lambda_function.zip
