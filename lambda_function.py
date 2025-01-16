@@ -2,12 +2,11 @@ import json
 import boto3
 import uuid
 from botocore.exceptions import ClientError
-from lib_types import MenuItemLarge
+from lib_types import MenuItemLarge, ImageData
 
 # Initialize S3 client
 s3_client = boto3.client("s3")
 BUCKET_NAME = "menu-tool-bucket"
-
 
 def new_menu_req(data):
     """
@@ -133,8 +132,61 @@ def load_all_menus():
     return {"statusCode": 200, "body": json.dumps({"status": "success", "menus": menus})}
 
 
-def get_test_str():
-    {"statusCode": 200, "body": json.dumps({"status": "success", "menus": "THIS IS A MENU"})}
+def get_test_menu():
+    """
+    Returns a test menu ID.
+    """
+    # Generate a fake menu ID for testing
+    test_menu_id = str(uuid.uuid4())
+    
+    return {
+        "statusCode": 200, 
+        "body": json.dumps({
+            "status": "success", 
+            "menu_id": test_menu_id,
+            "message": "Test menu ID generated successfully"
+        })
+    }
+
+
+def get_test_status(menu_id):
+    """
+    Returns the status of the test menu, including a fake menu object.
+    """
+    # Create a fake menu item for testing
+    fake_menu_item = MenuItemLarge(
+        name="Test Item 1",
+        description="A description of the test item.",
+        image=ImageData(url="https://example.com/image.png", altText="Test image"),
+        menuType="Main Course",
+        itemType="Food",
+        foodCategoryId=1,
+        flashcardBack="Flashcard back content",
+        dietary=["Vegetarian", "Gluten-Free"],
+        allergens=["Peanuts"],
+        relatedIds=["item123", "item456"],
+        storeIds=[101, 102],
+        shiftIds=[1, 2],
+        tagIds=["vegan", "gluten_free"]
+    )
+
+    fake_menu = {
+        "menu_id": menu_id,
+        "menu_name": "Test Menu",
+        "items": [fake_menu_item.dict()],  # Convert MenuItemLarge to a dict for the response
+        "status": "completed"
+    }
+
+    return {
+        "statusCode": 200, 
+        "body": json.dumps({
+            "status": "success", 
+            "menu_id": menu_id, 
+            "menu_status": "completed",
+            "menu": fake_menu
+        })
+    }
+
 
 def lambda_handler(event, context):
     """
@@ -152,8 +204,10 @@ def lambda_handler(event, context):
             return new_menu_req(body)
         elif path == "/get-status" and http_method == "GET":
             return get_status(query_params)
-        elif path == "/test" and http_method == "GET":
-            return get_test_str()
+        elif path == "/test-new-menu-req" and http_method == "GET":
+            return get_test_menu()
+        elif path == "/test-get-status" and http_method == "GET":
+            return get_test_menu()
         elif path == "/save-menu" and http_method == "POST":
             return save_menu(body)
         elif path == "/update-menu" and http_method == "PUT":
