@@ -207,7 +207,7 @@ def lambda_handler(event, context):
         elif path == "/test-new-menu-req" and http_method == "GET":
             return get_test_menu()
         elif path == "/test-get-status" and http_method == "GET":
-            return get_test_menu()
+            return get_test_status()
         elif path == "/save-menu" and http_method == "POST":
             return save_menu(body)
         elif path == "/update-menu" and http_method == "PUT":
