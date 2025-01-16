@@ -1,19 +1,28 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import re
-from source.crawler import Crawler
-from source.process_link import process_pdf, process_urls, chunk_text_data
-from source.gen_items import ItemGenerator, ItemExpander, MenuItemSmall, MenuItemLarge
+from crawler import Crawler
+from openai_functions import process_pdf, process_urls, chunk_text_data
+from types import MenuItemSmall, MenuItemLarge
+from openai import OpenAI
+import os
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 
 class ResponseHandler:
     def __init__(self, base_url: str):
         self.url = base_url
+        # Initialize OpenAI client with API key
+        self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
     def handle_request(self):
         crawler = Crawler(self.url)
         print(f"Crawling URL: {self.url}")
         crawler.crawl()
+
         all_links, pdf_links, relevant_links = crawler.get_results()
 
         print(f"Processing {len(pdf_links)} PDF links.")
@@ -31,13 +40,14 @@ class ResponseHandler:
         items = []
         for i, chunk in enumerate(chunks):
             print(f"Processing chunk #{i + 1}/{len(chunks)}")
-            gen = ItemGenerator()
-            items.extend([MenuItemSmall(**item) for item in gen(chunk)])
+            # Use the generate_items function
+            chunk_items = generate_items(self.client, chunk)
+            items.extend([MenuItemSmall(**item) for item in chunk_items])
 
-        item_expand = ItemExpander()
         menu_items = []
         for item in items:
-            expanded_item = item_expand.expand(item)
+            # Use the expand_item function
+            expanded_item = expand_item(self.client, item)
             if isinstance(expanded_item, MenuItemLarge):
                 menu_items.append(expanded_item)
             else:

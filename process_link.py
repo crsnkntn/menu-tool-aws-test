@@ -184,5 +184,8 @@ def process_urls(urls):
                 print(f"Finished processing URL: {url}. Extracted {len(result)} lines.")
             except Exception as e:
                 print(f"Error processing URL {url}: {e}")
+
+    # Remove empty strings
+    results = [text for text in results if text]
     print(f"Finished processing all URLs. Total results: {len(results)} lines.")
     return results
