@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+from typing import List
 
 # Define models
 class ImageData(BaseModel):
@@ -9,12 +11,12 @@ class MenuItemSmall(BaseModel):
     name: str
     description: str
     image: ImageData
-    details: list[str]
+    details: List[str]
 
 
 # Used as the response type for gpt
 class SmallResponse(BaseModel):
-    items: list[MenuItemSmall]
+    items: List[MenuItemSmall]
 
 
 class MenuItemLarge(BaseModel):
@@ -25,16 +27,16 @@ class MenuItemLarge(BaseModel):
     itemType: str
     foodCategoryId: int
     flashcardBack: str
-    dietary: list[str]
-    allergens: list[str]
-    relatedIds: list[str]
-    storeIds: list[int]
-    shiftIds: list[int]
-    tagIds: list[str]
+    dietary: List[str]
+    allergens: List[str]
+    relatedIds: List[str]
+    storeIds: List[int]
+    shiftIds: List[int]
+    tagIds: List[str]
 
 
 class LargeResponse(BaseModel):
-    items: list[MenuItemLarge]
+    items: List[MenuItemLarge]
 
 
 class InformedDeletionIndices(BaseModel):

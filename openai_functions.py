@@ -1,7 +1,4 @@
-import json
-from pydantic import BaseModel
 from typing import List, Dict, Any
-from tqdm import tqdm
 from types import InformedDeletionIndices, MenuItemLarge, MenuItemSmall, SmallResponse, LargeResponse
 
 gpt_model = "gpt-4o-mini"

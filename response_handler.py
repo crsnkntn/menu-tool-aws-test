@@ -1,6 +1,3 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import re
 from crawler import Crawler
 from openai_functions import process_pdf, process_urls, chunk_text_data
 from types import MenuItemSmall, MenuItemLarge
