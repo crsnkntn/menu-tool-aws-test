@@ -1,6 +1,5 @@
 requests
 beautifulsoup4
-uuid
 pypdf
 selenium
 webdriver-manager
