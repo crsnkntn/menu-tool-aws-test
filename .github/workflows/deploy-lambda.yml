@@ -24,8 +24,9 @@ jobs:
       # Step 3: Install dependencies
       - name: Install dependencies
         run: |
+          mkdir -p package
           pip install -r requirements.txt -t package
-          python -m pip install --upgrade pip
+          cp -r *.py package/
           cd package && zip -r ../index.zip . && cd ..
 
       # Step 4: Configure AWS credentials
