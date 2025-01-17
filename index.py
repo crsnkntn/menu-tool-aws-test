@@ -188,7 +188,7 @@ def get_test_status(menu_id):
     }
 
 
-def lambda_handler(event, context):
+def handler(event, context):
     """
     Main Lambda handler function.
     """
