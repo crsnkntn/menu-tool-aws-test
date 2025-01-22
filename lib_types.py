@@ -17,6 +17,9 @@ class MenuItemSmall(BaseModel):
 # Used as the response type for gpt
 class SmallResponse(BaseModel):
     items: List[MenuItemSmall]
+    running_category_list: List[str]
+    running_allergen_list: List[str]
+    running_dietary_list: List[str]
 
 
 class MenuItemLarge(BaseModel):
@@ -25,7 +28,7 @@ class MenuItemLarge(BaseModel):
     image: ImageData
     menuType: str
     itemType: str
-    foodCategoryId: int
+    foodCategoryId: str
     flashcardBack: str
     dietary: List[str]
     allergens: List[str]

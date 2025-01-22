@@ -3,3 +3,5 @@
 *.pyo
 .env
 venv/
+
+testing_output/
