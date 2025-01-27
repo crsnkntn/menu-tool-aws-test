@@ -23,72 +23,84 @@ def handler(event, context):
     except Exception as e:
         return {
             "statusCode": 500,
-            "body": json.dumps({"message": str(e)})
+            "body": json.dumps({"message": "Internal Server Error", "error": str(e)})
         }
 
 
 def handle_generate_request(event):
     """Handles the initial request to generate a menu."""
-    body = json.loads(event.get("body", "{}"))
-    text = body.get("text", "")
-    pdf_files = body.get("pdfFiles", [])
+    try:
+        body = json.loads(event.get("body", "{}"))
+        text = body.get("text", "")
+        pdf_files = body.get("pdfFiles", [])
 
-    if not text or not pdf_files:
-        return {
-            "statusCode": 400,
-            "body": json.dumps({"message": "Text and PDF files are required"})
+        if not text or not pdf_files:
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"message": "Text and PDF files are required"})
+            }
+
+        # Generate a unique request ID
+        request_id = f"request_{int(time.time())}"
+
+        # Store the initial status
+        generation_requests[request_id] = {
+            "status": "GENERATING",
+            "progress": 0,
+            "message": "Generation started. Please wait...",
+            "menuItems": None
         }
 
-    # Generate a unique request ID
-    request_id = f"request_00000000"
-
-    # Store the initial status
-    generation_requests[request_id] = {
-        "status": "GENERATING",
-        "progress": 0,
-        "message": "Generation started. Please wait...",
-        "menuItems": None
-    }
-
-    return {
-        "statusCode": 200,
-        "body": json.dumps({"requestId": request_id})
-    }
+        return {
+            "statusCode": 200,
+            "body": json.dumps({"requestId": request_id})
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"message": "Failed to initiate menu generation", "error": str(e)})
+        }
 
 
 def handle_generation_status(event):
     """Handles polling for the generation status."""
-    path = event.get("path", "")
-    request_id = path.split("/")[-1]
+    try:
+        path = event.get("path", "")
+        request_id = path.split("/")[-1]
 
-    if request_id not in generation_requests:
+        if request_id not in generation_requests:
+            return {
+                "statusCode": 404,
+                "body": json.dumps({"message": "Request ID not found"})
+            }
+
+        # Simulate progress
+        request_status = generation_requests[request_id]
+        if request_status["status"] == "GENERATING":
+            request_status["progress"] += 1
+
+            if request_status["progress"] >= 4:
+                # Mark as done after 4 updates
+                request_status["status"] = "DONE"
+                request_status["message"] = "Generation complete!"
+                request_status["menuItems"] = [
+                    {"name": "Burger", "description": "A delicious burger", "price": "$10"},
+                    {"name": "Pizza", "description": "Cheesy pepperoni pizza", "price": "$15"},
+                    {"name": "Salad", "description": "Fresh garden salad", "price": "$8"}
+                ]
+            else:
+                request_status["message"] = f"Generation in progress... Step {request_status['progress']} of 4."
+
         return {
-            "statusCode": 404,
-            "body": json.dumps({"message": "Request ID not found"})
+            "statusCode": 200,
+            "body": json.dumps({
+                "status": request_status["status"],
+                "message": request_status["message"],
+                "menuItems": request_status.get("menuItems", None)
+            })
         }
-
-    # Simulate progress
-    request_status = generation_requests[request_id]
-    if request_status["status"] == "GENERATING":
-        request_status["progress"] += 1
-
-        if request_status["progress"] >= 4:
-            # Mark as done after 4 updates
-            request_status["status"] = "DONE"
-            request_status["message"] = "Generation complete!"
-            request_status["menuItems"] = [
-                {"name": "Burger", "description": "A delicious burger", "price": "$10"},
-                {"name": "Pizza", "description": "Cheesy pepperoni pizza", "price": "$15"},
-                {"name": "Salad", "description": "Fresh garden salad", "price": "$8"}
-            ]
-        else:
-            request_status["message"] = f"Generation in progress... Step {request_status['progress']} of 4."
-
-    return {
-        "statusCode": 200,
-        "body": json.dumps({
-            "status": request_status["status"],
-            "message": request_status["message"],
-            "menuItems": request_status.get("menuItems", None)
-        })
-    }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"message": "Failed to retrieve status", "error": str(e)})
+        }
