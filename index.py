@@ -17,7 +17,7 @@ def handler(event, context):
             return handle_generation_status(event)
 
         return {
-            "statusCode": 404,
+            "statusCode": 200,
             "body": json.dumps({"message": "Not Found"})
         }
     except Exception as e:
