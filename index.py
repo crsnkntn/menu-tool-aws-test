@@ -40,7 +40,7 @@ def handle_generate_request(event):
         }
 
     # Generate a unique request ID
-    request_id = f"request_{int(time.time() * 1000)}"
+    request_id = f"request_00000000"
 
     # Store the initial status
     generation_requests[request_id] = {
