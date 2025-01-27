@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from lib_types import InformedDeletionIndices, MenuItemLarge, MenuItemSmall, SmallResponse, LargeResponse
+from lib_types import InformedDeletionIndices, MenuItemLarge, MenuItemSmall, SmallResponse, LargeResponse, ListOfStrings
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
@@ -44,37 +44,42 @@ def informed_deletion(
 
 def generate_items(
     chunk: str, 
-    running_category_list: List[str], 
-    running_allergen_list: List[str], 
-    running_dietary_list: List[str]
+    running_category_list: List[str]
 ) -> List[Dict[str, Any]]:
-    NAME_INSTR = "The name of the menu item as it appears in the content."
-    DESCRIPTION_INSTR = "Extract the description VERBATIM as it appears in the content. If there is no provided description, then return 'NEEDS DESCRIPTION'"
-    IMAGE_INSTR = "The image object has two fields, 'file' and 'fileName'. If a menu item's url is in the content, it should be stored in 'file' else 'file' should be PROMPT: prompt, where prompt is a natural language descriptor of what the menu item is. fileName should be something such as hamburger.jpg if the item was a hamburger."
-    DETAILS_INSTR = "In details, store all extra information about an item as is found in the content."
-    RUNNING_LIST_INSTR = "You are provided a list of menu item categories, allergen types, and dietary types found so far in other chunks. If you find new categories in this chunk, add them to the list. The goal is the standardize the categories, so do not repeat categories that are similar." # TODO: DID THIS WORK?
+    NAME_INSTR = "Extract the name of the menu item exactly as it appears in the content."
+    DESCRIPTION_INSTR = (
+        "Extract the description verbatim as it appears in the content. If there is no description in the content, DO NOT MAKE ONE UP, return 'NEEDS DESCRIPTION' instead."
+    )
+    IMAGE_INSTR = (
+        "The image object contains two fields: 'file' and 'fileName'.\n"
+        "- 'file': If a menu item's URL is in the content, store it here. Otherwise, store a prompt describing the menu item in natural language.\n"
+        "- 'fileName': Use a descriptive name like 'hamburger.jpg' for a hamburger."
+    )
+    DETAILS_INSTR = "Extract any additional information about the menu item as presented in the content and store it in 'details'."
+    RUNNING_LIST_INSTR = (
+        "You will be provided a list of menu item categories that have been discovered in previous chunks."
+        "Menu categories are things such as Appetizers/Entrees/Wine etc. but have varied names based on the conventions used by the restaurant."
+        "If you find categories in this chunk not currently in the list, add them."
+        "If you find missing categories that should be a restaurant menu category, add them as well."
+    )
 
     prompt_template = (
-        "The following text is scraped from a restaurant's website. Some of the content may include information about menu items, "
-        "but most of it may not be relevant. Your task is to identify and extract details about the menu items from this text. "
-        "If no menu data is found in the provided text, return an empty list. "
-        "\n\n"
-        f"You will be provided a chunk of text scraped from the content of a restaurant's website."
-        f"Your task is to find information about this restaurant's menu items within the chunk."
-        f"You will be provided a response tempplate. Here are the instructions for each field of the response:"
-        f"'name:' {NAME_INSTR}"
-        f"'description:' {DESCRIPTION_INSTR}"
-        f"'image:' {IMAGE_INSTR}"
-        f"'details:' {DETAILS_INSTR}"
-        f"'running_category_list, running_allergen_list, running_dietary_list:' {RUNNING_LIST_INSTR}"
-        f"Here are the lists, respectively: {running_category_list}, {running_allergen_list}, {running_dietary_list}\n"
-        f"- Do NOT fabricate information, such as image links or details not found in the text."
-        f"- Ensure extracted data is accurate and formatted correctly."
-        "- Leave any field blank if the information is not present in the text.\n\n"
-        "Guidelines:\n"
-        "- Ignore unrelated data.\n"
-        "- Do not fabricate information, such as image links or details not found in the text.\n"
-        "- Ensure extracted data is accurate and formatted correctly.\n\n"
+        "The following text is scraped from a restaurant's website and may include menu item information or irrelevant content.\n\n"
+        "Your task is to identify and extract menu item details accurately from the provided text. If no menu data is found, return an empty list.\n\n"
+        "### Instructions for Response Fields ###\n"
+        f"- 'name': {NAME_INSTR}\n"
+        f"- 'description': {DESCRIPTION_INSTR}\n"
+        f"- 'image': {IMAGE_INSTR}\n"
+        f"- 'details': {DETAILS_INSTR}\n"
+        f"- Running Lists: {RUNNING_LIST_INSTR}\n"
+        "The current list is:\n"
+        f"- Menu Categories: {running_category_list}\n"
+        "### Guidelines ###\n"
+        "- Only include information explicitly present in the text.\n"
+        "- Leave fields blank if no information is available.\n"
+        "- Do not fabricate data (e.g., image URLs or details not found in the text).\n"
+        "- Ensure accurate formatting of extracted data.\n"
+        "- Ignore irrelevant data.\n\n"
         "Here is the text chunk to analyze:\n{chunk}\n"
     )
 
@@ -85,7 +90,7 @@ def generate_items(
             messages=[{"role": "user", "content": prompt}],
             response_format=SmallResponse,
         )
-        return [item.dict() for item in response.choices[0].message.parsed.items], response.choices[0].message.parsed.running_category_list, response.choices[0].message.parsed.running_allergen_list, response.choices[0].message.parsed.running_dietary_list
+        return [item.dict() for item in response.choices[0].message.parsed.items], response.choices[0].message.parsed.running_category_list
     except Exception as e:
         print(f"Error processing chunk: {e}")
         return []
@@ -150,6 +155,31 @@ def expand_item(
         parsed_response = response.choices[0].message.parsed
         if isinstance(parsed_response, MenuItemLarge):
             return parsed_response
+        else:
+            print("Response is invalid or not of type MenuItemLarge.")
+            return None
+    except Exception as e:
+        print(f"Error expanding item: {e}")
+        return None
+
+
+
+def standardize_categories(
+    category_list: List[str]
+):
+    required_categories = ["Wines", "Cocktails", "Beers", "Spirits", "Appetizers", "Soups", "Starters", "Entrees"]
+    prompt = f"You will be given a list of categories found on a restaurant's menu. If any of the following are missing from the list, add them: {required_categories}. Remember that there are mutliple words for a term, so dont duplicate categories. Here is the current list: {category_list}"
+    
+    try:
+        response = client.beta.chat.completions.parse(
+            model=gpt_model,
+            messages=[{"role": "user", "content": prompt}],
+            response_format=ListOfStrings,
+        )
+
+        parsed_response = response.choices[0].message.parsed
+        if isinstance(parsed_response, ListOfStrings):
+            return parsed_response.strings
         else:
             print("Response is invalid or not of type MenuItemLarge.")
             return None

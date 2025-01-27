@@ -7,6 +7,10 @@ class ImageData(BaseModel):
     filename: str
 
 
+class ListOfStrings(BaseModel):
+    strings: List[str]
+
+
 class MenuItemSmall(BaseModel):
     name: str
     description: str
@@ -18,8 +22,6 @@ class MenuItemSmall(BaseModel):
 class SmallResponse(BaseModel):
     items: List[MenuItemSmall]
     running_category_list: List[str]
-    running_allergen_list: List[str]
-    running_dietary_list: List[str]
 
 
 class MenuItemLarge(BaseModel):

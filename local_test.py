@@ -44,7 +44,7 @@ def test_chunking(url):
         print(f"Chunks written to 'output_chunks.txt'.")
 
 if __name__ == "__main__":
-    url = "savasannarbor"
+    url = "eatathazels"
     #test_chunking(url)
 
     handler = ResponseHandler(url)

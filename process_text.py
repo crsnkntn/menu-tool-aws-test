@@ -105,6 +105,10 @@ def extract_content_from_html(html: str, repetition_threshold=5) -> List[str]:
 
     bs_parser = BeautifulSoup(html, "html.parser")
 
+    # TODO: IS THE TEXT DATA BEING FILTERED OUT OR IS IT NEVER SCRAPED?
+    with open("testing_output/html_content.txt", "a+", encoding="utf-8") as file:
+        file.write(f"{html}\n----NEXT----\n")
+
     # Remove tags that contain code and irrelevant stuff
     for tag in bs_parser.find_all(["script", "style", "meta", "link", "svg", "noscript"], recursive=True):
         tag.decompose()
@@ -132,10 +136,10 @@ def extract_content_from_html(html: str, repetition_threshold=5) -> List[str]:
 
 
 def chunk_text_data(text_list, chunk_size, buffer_size=100):
-    if not test_list:
+    if not text_list:
         return []
 
-    full_text = " ".join(test_list)
+    full_text = " ".join(text_list)
 
     sentences = re.split(r'(?<=[.!?]) +', full_text)
     chunks, current_chunk = [], []
