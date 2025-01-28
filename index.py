@@ -21,7 +21,7 @@ def handler(event, context):
         # Parse the HTTP method and path
         body = json.loads(event.get("body", "{}"))
 
-        request_type = body.get("request_type", "")
+        request_type = body.get("requestType", "")
 
         if request_type == "gen":
             assert body.get("url", "")
