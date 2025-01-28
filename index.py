@@ -18,7 +18,7 @@ def handler(event, context):
 
         return {
             "statusCode": 200,
-            "body": json.dumps({"message": "Not Found"})
+            "body": json.dumps({"message": "You have connected to the lambda function!"})
         }
     except Exception as e:
         return {
