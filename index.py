@@ -24,11 +24,8 @@ def handler(event, context):
         request_type = body.get("requestType", "")
 
         if request_type == "gen":
-            assert body.get("url", "")
             return handle_generate_request(body)
         elif request_type == "get-status":
-            assert body.get("requestId", "")
-            assert body.get("isCanceled", "")
             return handle_generation_status(body)
 
         return {
