@@ -1,106 +1,156 @@
 import json
 import time
+import boto3
+from botocore.exceptions import ClientError
 
-# Simulated in-memory storage for request status
-generation_requests = {}
+# AWS S3 bucket setup
+S3_BUCKET = "menu-tool-bucket"
+s3_client = boto3.client("s3")
+
+all_states = [
+    "Crawling & Scraping the Page ...",
+    "Cleaning the Scraped Content ...",
+    "Generating the Menu Item Templates ...",
+    "Expanding the Menu Item Templates ...",
+    "Cleaning and Refining all Menu Items ..."
+]
+
 
 def handler(event, context):
     try:
         # Parse the HTTP method and path
-        http_method = event.get("httpMethod", "")
-        path = event.get("path", "")
+        body = json.loads(event.get("body", "{}"))
 
-        if http_method == "POST" and path == "/generate-menu":
-            return handle_generate_request(event)
+        request_type = body.get("request_type", "")
 
-        if http_method == "GET" and path.startswith("/generation-status/"):
-            return handle_generation_status(event)
+        if request_type == "gen":
+            assert body.get("url", "")
+            return handle_generate_request(body)
+        elif request_type == "get-status":
+            assert body.get("requestId", "")
+            assert body.get("isCanceled", "")
+            return handle_generation_status(body)
 
         return {
-            "statusCode": 200,
-            "body": json.dumps({"message": "You have connected to the lambda function!"})
+            "statusCode": 404,
+            "body": json.dumps({"message": f"Error: Request type \"{request_type}\" does not exist."}),
         }
     except Exception as e:
         return {
             "statusCode": 500,
-            "body": json.dumps({"message": "Internal Server Error", "error": str(e)})
+            "body": json.dumps({"message": "Internal Server Error", "error": str(e)}),
         }
 
 
-def handle_generate_request(event):
+def save_request_to_s3(request_id, data):
+    """Save a request object to S3."""
+    try:
+        s3_client.put_object(
+            Bucket=S3_BUCKET,
+            Key=f"requests/{request_id}.json",
+            Body=json.dumps(data),
+            ContentType="application/json",
+        )
+    except ClientError as e:
+        raise Exception(f"Error saving to S3: {e}")
+
+
+def get_request_from_s3(request_id):
+    """Retrieve a request object from S3."""
+    try:
+        response = s3_client.get_object(
+            Bucket=S3_BUCKET,
+            Key=f"requests/{request_id}.json"
+        )
+        return json.loads(response["Body"].read())
+    except ClientError as e:
+        raise Exception(f"Error fetching from S3: {e}")
+
+
+def handle_generate_request(body):
     """Handles the initial request to generate a menu."""
     try:
-        body = json.loads(event.get("body", "{}"))
-        text = body.get("text", "")
-        pdf_files = body.get("pdfFiles", [])
+        url = body.get("url", "")
 
-        if not text or not pdf_files:
+        if not url:
             return {
                 "statusCode": 400,
-                "body": json.dumps({"message": "Text and PDF files are required"})
+                "body": json.dumps({"message": "URL is required"}),
             }
 
         # Generate a unique request ID
         request_id = f"request_{int(time.time())}"
 
-        # Store the initial status
-        generation_requests[request_id] = {
+        # Create the initial status object
+        request_data = {
             "status": "GENERATING",
-            "progress": 0,
-            "message": "Generation started. Please wait...",
-            "menuItems": None
+            "message": all_states[0],
+            "menuItems": None,
         }
+
+        # Save to S3
+        save_request_to_s3(request_id, request_data)
 
         return {
             "statusCode": 200,
-            "body": json.dumps({"requestId": request_id})
+            "body": json.dumps({"requestId": request_id}),
         }
     except Exception as e:
         return {
             "statusCode": 500,
-            "body": json.dumps({"message": "Failed to initiate menu generation", "error": str(e)})
+            "body": json.dumps({"message": "Failed to initiate menu generation", "error": str(e)}),
         }
 
 
-def handle_generation_status(event):
+def handle_generation_status(body):
     """Handles polling for the generation status."""
     try:
-        path = event.get("path", "")
-        request_id = path.split("/")[-1]
+        request_id = body.get("requestId", "")
+        is_canceled = body.get("isCanceled", False)
 
-        if request_id not in generation_requests:
+        # Fetch the request data from S3
+        request_data = get_request_from_s3(request_id)
+
+        if is_canceled:
+            # Update and save the status to CANCELED
+            request_data["status"] = "CANCELED"
+            request_data["message"] = "Generation canceled by the user."
+            save_request_to_s3(request_id, request_data)
+
             return {
-                "statusCode": 404,
-                "body": json.dumps({"message": "Request ID not found"})
+                "statusCode": 200,
+                "body": json.dumps({
+                    "status": request_data["status"],
+                    "message": request_data["message"],
+                    "menuItems": None,
+                }),
             }
 
         # Simulate progress
-        request_status = generation_requests[request_id]
-        if request_status["status"] == "GENERATING":
-            request_status["progress"] += 1
-
-            if request_status["progress"] >= 4:
-                # Mark as done after 4 updates
-                request_status["status"] = "DONE"
-                request_status["message"] = "Generation complete!"
-                request_status["menuItems"] = [
-                    {"name": "Burger", "description": "A delicious burger", "price": "$10"},
-                    {"name": "Pizza", "description": "Cheesy pepperoni pizza", "price": "$15"},
-                    {"name": "Salad", "description": "Fresh garden salad", "price": "$8"}
-                ]
+        if request_data["status"] == "GENERATING":
+            current_message = request_data["message"]
+            if current_message in all_states[:-1]:
+                next_index = all_states.index(current_message) + 1
+                request_data["message"] = all_states[next_index]
             else:
-                request_status["message"] = f"Generation in progress... Step {request_status['progress']} of 4."
+                # Final state
+                request_data["status"] = "DONE"
+                request_data["message"] = "Generation complete!"
+                request_data["menuItems"] = ["Item 1", "Item 2", "Item 3"]  # Example menu items
+
+            # Save updated status to S3
+            save_request_to_s3(request_id, request_data)
 
         return {
             "statusCode": 200,
             "body": json.dumps({
-                "status": request_status["status"],
-                "message": request_status["message"],
-                "menuItems": request_status.get("menuItems", None)
-            })
+                "status": request_data["status"],
+                "message": request_data["message"],
+                "menuItems": request_data["menuItems"] if request_data["status"] == "DONE" else None,
+            }),
         }
     except Exception as e:
         return {
             "statusCode": 500,
-            "body": json.dumps({"message": "Failed to retrieve status", "error": str(e)})
+            "body": json.dumps({"message": "Failed to fetch generation status", "error": str(e)}),
         }
