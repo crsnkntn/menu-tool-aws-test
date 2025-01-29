@@ -4,6 +4,7 @@ from lib_types import MenuItemSmall, MenuItemLarge
 from openai_functions import *
 import re
 import boto3
+from botocore.exceptions import ClientError
 from tqdm import tqdm
 from statistics import mean
 
