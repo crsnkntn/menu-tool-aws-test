@@ -27,6 +27,8 @@ def handler(event, context):
             return handle_generate_request(body)
         elif request_type == "get-status":
             return handle_generation_status(body)
+        elif request_type == "run-tests":
+            return handle_test()
 
         return {
             "statusCode": 404,
@@ -151,3 +153,7 @@ def handle_generation_status(body):
             "statusCode": 500,
             "body": json.dumps({"message": "Failed to fetch generation status", "error": str(e)}),
         }
+
+
+def handle_tests():
+    pass
