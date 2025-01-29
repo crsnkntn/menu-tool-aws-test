@@ -15,6 +15,22 @@ from webdriver_manager.chrome import ChromeDriverManager
 from openai_functions import informed_deletion
 from process_text import process_pdf
 
+
+# Check the path
+possible_paths = [
+    "/opt/bin/headless-chromium",
+    "/opt/chrome/chrome",
+    "/opt/google/chrome"
+]
+
+for path in possible_paths:
+    if os.path.exists(path):
+        print(f"Chrome binary found at: {path}")
+        break
+else:
+    print("Chrome binary NOT found. Check your Lambda Layers!")
+
+
 class Crawler:
     def __init__(self, start_url, max_depth=3):
         self.start_url = start_url
@@ -33,7 +49,7 @@ class Crawler:
         print("Setting up Selenium WebDriver for AWS Lambda.")
 
         # Use prebuilt Chrome binary from Lambda Layer
-        chrome_binary_path = "/opt/bin/headless-chromium"  
+        chrome_binary_path = "/opt/chrome/chrome"  
         driver_path = "/var/task/chromedriver"
 
         if not os.path.exists(driver_path):
