@@ -41,7 +41,7 @@ class GenerateMenuHandler:
     def run(self):
         """Execute all menu generation steps in order, updating S3 at each step."""
         try:
-            pairs = self.get_url_html_pairs(self.url)
+            pairs = self.get_url_html_pairs()
             chunks = self.clean_url_html_pairs(pairs)
             items, categories = self.generate_menu_templates(chunks)
             expanded_items = self.expand_menu_templates(items)
