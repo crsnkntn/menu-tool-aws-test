@@ -4,6 +4,7 @@ import os
 import shutil
 import requests
 import subprocess
+import brotli
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from selenium import webdriver
@@ -15,7 +16,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from openai_functions import informed_deletion
 from process_text import process_pdf
-
 
 
 class Crawler:
@@ -31,7 +31,7 @@ class Crawler:
     def __del__(self):
         self.driver.quit()
 
-    def create_driver(self):
+    def create_driver():
         """Setup Selenium WebDriver for AWS Lambda using Sparticuz's Chromium."""
         print("🔧 Setting up Chromium and Selenium WebDriver for AWS Lambda.")
 
@@ -42,7 +42,11 @@ class Crawler:
         # Extract Chromium if not already extracted
         if not os.path.exists(extracted_chrome_path):
             print(f"🔄 Extracting Chromium from {compressed_chrome_path} to {extracted_chrome_path}...")
-            subprocess.run(["brotli", "-d", compressed_chrome_path, "-o", extracted_chrome_path], check=True)
+            with open(compressed_chrome_path, "rb") as f:
+                compressed_data = f.read()
+            decompressed_data = brotli.decompress(compressed_data)
+            with open(extracted_chrome_path, "wb") as f:
+                f.write(decompressed_data)
             os.chmod(extracted_chrome_path, 0o755)  # Ensure it's executable
 
         # Ensure ChromeDriver is included in the deployment package
