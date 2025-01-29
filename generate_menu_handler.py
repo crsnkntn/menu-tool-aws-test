@@ -35,6 +35,19 @@ class GenerateMenuHandler:
         }
         self.save_request_to_s3()
     
+    def run(self):
+        """Execute all menu generation steps in order, updating S3 at each step."""
+        try:
+            pairs = self.get_url_html_pairs(self.url)
+            chunks = self.clean_url_html_pairs(pairs)
+            items, categories = self.generate_menu_templates(chunks)
+            expanded_items = self.expand_menu_templates(items)
+            self.standardize_menu_items(expanded_items)
+        except Exception as e:
+            self.request_data["status"] = "FAILED"
+            self.request_data["message"] = f"Error occurred: {str(e)}"
+            self.save_request_to_s3()
+
     def save_request_to_s3(self):
         """Save the request object to S3."""
         try:
