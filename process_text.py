@@ -2,23 +2,12 @@ from pypdf import PdfReader
 import re
 import time
 import requests
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from typing import List, Dict, Any
-from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
 from bs4 import BeautifulSoup
 from concurrent.futures import ThreadPoolExecutor
 from collections import deque
 from openai_functions import informed_deletion
 
-# Set up Selenium WebDriver with Chrome
-chrome_options = Options()
-chrome_options.add_argument("--headless")  # Run in headless mode
-service = Service(ChromeDriverManager().install())
-driver = webdriver.Chrome(service=service, options=chrome_options) 
-driver.set_page_load_timeout(30) 
 
 # Compile regex patterns for clean_text function
 WHITESPACE_PATTERN = re.compile(r"\s+")
@@ -30,14 +19,17 @@ def process_pdf(pdf_url):
     try:
         response = requests.get(pdf_url, timeout=30)
         response.raise_for_status()
-        with open("temp.pdf", "wb") as temp_pdf:
+        temp_pdf_path = "/tmp/temp.pdf"  # Ensure we use the writable /tmp directory
+        
+        with open(temp_pdf_path, "wb") as temp_pdf:
             temp_pdf.write(response.content)
         
-        reader = PdfReader("temp.pdf")
+        reader = PdfReader(temp_pdf_path)
         return "".join(page.extract_text() for page in reader.pages)
-
+    
     except Exception as e:
         return ""
+
 
 
 def filter_lines(lines: List[str], batch_size=50) -> List[str]:

@@ -4,5 +4,10 @@
 .env
 venv/
 
+json_to_xlsx.py
+local_test.py
+
 testing_output/
+
+*.pdf
 *.xlsx

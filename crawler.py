@@ -28,17 +28,26 @@ class Crawler:
         self.driver.quit()
 
     def create_driver(self):
-        """Set up a Selenium WebDriver instance."""
-        chrome_options = Options()
-        chrome_options.add_argument("--headless=new")  # Use "--headless" for older versions
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Reduces bot detection
-        chrome_options.add_argument("--disable-infobars")  # Hides "Chrome is being controlled by automated software" message
-        print("Creating a new Selenium WebDriver instance.")
+        """Set up a Selenium WebDriver instance with Lambda-compatible settings."""
+        
+        # Set WebDriverManager cache location
         os.environ["WDM_LOCAL"] = "1"
         os.environ["WDM_CACHE"] = "/tmp/.wdm"
 
+        # Ensure the /tmp directory is used for storing the ChromeDriver binary
+        driver_path = ChromeDriverManager(path="/tmp/.wdm").install()
+
+        chrome_options = Options()
+        chrome_options.add_argument("--headless=new")  # Use "--headless" for older versions
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Reduces bot detection
+        chrome_options.add_argument("--disable-infobars")  # Hides "Chrome is being controlled" message
+        chrome_options.add_argument("--no-sandbox")  # Important for Lambda
+        chrome_options.add_argument("--disable-dev-shm-usage")  # Uses /tmp instead of /dev/shm
+
+        print("Creating a new Selenium WebDriver instance.")
+
         return webdriver.Chrome(
-            service=Service(ChromeDriverManager(path="/tmp/.wdm").install()),
+            service=Service(driver_path),
             options=chrome_options
         )
 
