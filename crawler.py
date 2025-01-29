@@ -1,6 +1,7 @@
 import time
 import re
 import os
+import shutil
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -27,27 +28,35 @@ class Crawler:
     def __del__(self):
         self.driver.quit()
 
-    def create_driver(self):
-        """Set up a Selenium WebDriver instance with Lambda-compatible settings."""
+    def create_driver():
+        print("Setting up a Selenium WebDriver instance compatible with AWS Lambda.")
         
-        # Set WebDriverManager cache location
+        # Set WebDriverManager cache location to /tmp
         os.environ["WDM_LOCAL"] = "1"
-        os.environ["WDM_CACHE"] = "/tmp/.wdm"
+        os.environ["WDM_CACHE"] = "/tmp"
 
-        # Ensure the /tmp directory is used for storing the ChromeDriver binary
-        driver_path = ChromeDriverManager(path="/tmp/.wdm").install()
+        # Download ChromeDriver to a temporary location
+        driver_path = ChromeDriverManager().install()
 
+        # Move the driver binary to /tmp explicitly (Lambda requires this)
+        lambda_driver_path = "/tmp/chromedriver"
+        shutil.move(driver_path, lambda_driver_path)
+        os.chmod(lambda_driver_path, 0o755)  # Ensure it's executable
+
+        # Set Chrome options
         chrome_options = Options()
+        chrome_options.binary_location = "/opt/chrome/chrome"  # Ensure Chrome binary exists in /opt
         chrome_options.add_argument("--headless=new")  # Use "--headless" for older versions
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Reduces bot detection
         chrome_options.add_argument("--disable-infobars")  # Hides "Chrome is being controlled" message
         chrome_options.add_argument("--no-sandbox")  # Important for Lambda
         chrome_options.add_argument("--disable-dev-shm-usage")  # Uses /tmp instead of /dev/shm
+        chrome_options.add_argument("--single-process")  # Reduces resource usage
 
-        print("Creating a new Selenium WebDriver instance.")
+        print("Creating a new Selenium WebDriver instance in AWS Lambda.")
 
         return webdriver.Chrome(
-            service=Service(driver_path),
+            service=Service(lambda_driver_path),
             options=chrome_options
         )
 
