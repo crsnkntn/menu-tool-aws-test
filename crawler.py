@@ -28,7 +28,7 @@ class Crawler:
     def __del__(self):
         self.driver.quit()
 
-    def create_driver():
+    def create_driver(self):
         print("Setting up a Selenium WebDriver instance compatible with AWS Lambda.")
         
         # Set WebDriverManager cache location to /tmp
