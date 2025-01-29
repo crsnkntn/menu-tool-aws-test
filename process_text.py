@@ -27,7 +27,6 @@ NON_ALPHA_PATTERN = re.compile(r"[a-zA-Z0-9\s]")
 
 
 def process_pdf(pdf_url):
-    print(f"Processing {pdf_url}")
     try:
         response = requests.get(pdf_url, timeout=30)
         response.raise_for_status()
@@ -38,7 +37,7 @@ def process_pdf(pdf_url):
         return "".join(page.extract_text() for page in reader.pages)
 
     except Exception as e:
-        print(f"Failed to fetch the pdf: {pdf_url}, exception {e}")
+        return ""
 
 
 def filter_lines(lines: List[str], batch_size=50) -> List[str]:

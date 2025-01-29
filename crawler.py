@@ -1,5 +1,6 @@
 import time
 import re
+import os
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
@@ -13,10 +14,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 from openai_functions import informed_deletion
 from process_text import process_pdf
 
-def writefile(thing, filename="testing_output/output.txt"):
-    with open(filename, "a+", encoding="utf-8") as file:
-        file.write(thing + "\n")
-
 class Crawler:
     def __init__(self, start_url, max_depth=3):
         self.start_url = start_url
@@ -26,8 +23,6 @@ class Crawler:
         self.relevant_links = set()  # Now stores (link, content) tuples
         self.pdf_links = set()  # Now stores (link, content) tuples
         self.driver = self.create_driver()
-
-        print(f"Initialized Crawler with start_url: {start_url} and max_depth: {max_depth}")
 
     def __del__(self):
         self.driver.quit()
@@ -39,8 +34,11 @@ class Crawler:
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Reduces bot detection
         chrome_options.add_argument("--disable-infobars")  # Hides "Chrome is being controlled by automated software" message
         print("Creating a new Selenium WebDriver instance.")
+        os.environ["WDM_LOCAL"] = "1"
+        os.environ["WDM_CACHE"] = "/tmp/.wdm"
+
         return webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
+            service=Service(ChromeDriverManager(path="/tmp/.wdm").install()),
             options=chrome_options
         )
 
