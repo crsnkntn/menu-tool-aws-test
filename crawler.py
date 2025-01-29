@@ -32,17 +32,15 @@ class Crawler:
         """Setup a Selenium WebDriver instance using a pre-packaged ChromeDriver."""
         print("Setting up Selenium WebDriver for AWS Lambda.")
 
-        # Ensure the ChromeDriver path is correct (from the Lambda deployment package)
+        # Use prebuilt Chrome binary from Lambda Layer
+        chrome_binary_path = "/opt/bin/headless-chromium"  
         driver_path = "/var/task/chromedriver"
-
-        # Ensure Chrome binary path (Lambda-compatible)
-        chrome_binary_path = "/opt/chrome/chrome"
 
         if not os.path.exists(driver_path):
             raise FileNotFoundError(f"ChromeDriver not found at {driver_path}. Ensure it was bundled in the deployment package.")
 
         if not os.path.exists(chrome_binary_path):
-            raise FileNotFoundError(f"Chrome binary not found at {chrome_binary_path}. Ensure it's installed in the Lambda layer.")
+            raise FileNotFoundError(f"Chrome binary not found at {chrome_binary_path}. Ensure the Lambda Layer is attached.")
 
         # Set Chrome options
         chrome_options = Options()
