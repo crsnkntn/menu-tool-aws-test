@@ -49,7 +49,7 @@ class Crawler:
         print("Setting up Selenium WebDriver for AWS Lambda.")
 
         # Use prebuilt Chrome binary from Lambda Layer
-        chrome_binary_path = "/opt/chrome/chrome"  
+        chrome_binary_path = "/opt/bin/headless-chromium"
         driver_path = "/var/task/chromedriver"
 
         if not os.path.exists(driver_path):
