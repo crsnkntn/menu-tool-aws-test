@@ -28,35 +28,36 @@ class Crawler:
     def __del__(self):
         self.driver.quit()
 
-    def create_driver(self):
-        print("Setting up a Selenium WebDriver instance compatible with AWS Lambda.")
-        
-        # Set WebDriverManager cache location to /tmp
-        os.environ["WDM_LOCAL"] = "1"
-        os.environ["WDM_CACHE"] = "/tmp"
+    def create_driver():
+        """Setup a Selenium WebDriver instance using a pre-packaged ChromeDriver."""
+        print("Setting up Selenium WebDriver for AWS Lambda.")
 
-        # Download ChromeDriver to a temporary location
-        driver_path = ChromeDriverManager().install()
+        # Ensure the ChromeDriver path is correct (from the Lambda deployment package)
+        driver_path = "/var/task/chromedriver"
 
-        # Move the driver binary to /tmp explicitly (Lambda requires this)
-        lambda_driver_path = "/tmp/chromedriver"
-        shutil.move(driver_path, lambda_driver_path)
-        os.chmod(lambda_driver_path, 0o755)  # Ensure it's executable
+        # Ensure Chrome binary path (Lambda-compatible)
+        chrome_binary_path = "/opt/chrome/chrome"
+
+        if not os.path.exists(driver_path):
+            raise FileNotFoundError(f"ChromeDriver not found at {driver_path}. Ensure it was bundled in the deployment package.")
+
+        if not os.path.exists(chrome_binary_path):
+            raise FileNotFoundError(f"Chrome binary not found at {chrome_binary_path}. Ensure it's installed in the Lambda layer.")
 
         # Set Chrome options
         chrome_options = Options()
-        chrome_options.binary_location = "/opt/chrome/chrome"  # Ensure Chrome binary exists in /opt
-        chrome_options.add_argument("--headless=new")  # Use "--headless" for older versions
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Reduces bot detection
-        chrome_options.add_argument("--disable-infobars")  # Hides "Chrome is being controlled" message
-        chrome_options.add_argument("--no-sandbox")  # Important for Lambda
-        chrome_options.add_argument("--disable-dev-shm-usage")  # Uses /tmp instead of /dev/shm
-        chrome_options.add_argument("--single-process")  # Reduces resource usage
+        chrome_options.binary_location = chrome_binary_path
+        chrome_options.add_argument("--headless=new")
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        chrome_options.add_argument("--disable-infobars")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--single-process")
 
-        print("Creating a new Selenium WebDriver instance in AWS Lambda.")
+        print("Launching Selenium WebDriver with pre-packaged ChromeDriver.")
 
         return webdriver.Chrome(
-            service=Service(lambda_driver_path),
+            service=Service(driver_path),
             options=chrome_options
         )
 
