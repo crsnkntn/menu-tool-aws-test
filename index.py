@@ -2,7 +2,7 @@ import json
 import boto3
 from generate_menu_handler import GenerateMenuHandler
 
-def lambda_handler(event, context):
+def handler(event, context):
     """Triggered by SQS to process menu generation requests."""
     for record in event["Records"]:
         message_body = json.loads(record["body"])
