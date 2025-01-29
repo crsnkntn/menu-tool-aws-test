@@ -4,6 +4,10 @@ from generate_menu_handler import GenerateMenuHandler
 
 def handler(event, context):
     """Triggered by SQS to process menu generation requests."""
+    for root, dirs, files in os.walk("/opt"):
+        print(root, dirs, files)
+
+    return
     for record in event["Records"]:
         message_body = json.loads(record["body"])
         url = message_body["url"]
