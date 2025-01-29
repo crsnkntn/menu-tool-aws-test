@@ -31,7 +31,7 @@ class Crawler:
     def __del__(self):
         self.driver.quit()
 
-    def create_driver():
+    def create_driver(self):
         """Setup Selenium WebDriver for AWS Lambda using Sparticuz's Chromium."""
         print("🔧 Setting up Chromium and Selenium WebDriver for AWS Lambda.")
 
