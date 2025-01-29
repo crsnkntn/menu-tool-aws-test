@@ -3,6 +3,7 @@ from process_text import process_pdf, extract_content_from_html, chunk_text_data
 from lib_types import MenuItemSmall, MenuItemLarge
 from openai_functions import *
 import re
+import boto3
 from tqdm import tqdm
 from statistics import mean
 
