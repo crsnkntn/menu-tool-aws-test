@@ -7,3 +7,4 @@ openai
 python-dotenv
 boto3
 pydantic
+sparticuz-chromium==115.0.5790.171

@@ -38,7 +38,7 @@ jobs:
           # Copy Python scripts
           cp *.py package/
 
-          # Zip everything into index.zip
+          # Create deployment ZIP
           cd package && zip -r ../index.zip . && cd ..
 
       # Step 4: Configure AWS credentials
