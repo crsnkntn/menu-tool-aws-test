@@ -6,4 +6,4 @@ webdriver-manager
 openai
 python-dotenv
 boto3
-pydantic==1.10.9
+pydantic
