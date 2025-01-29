@@ -3,6 +3,7 @@ import re
 import os
 import shutil
 import requests
+import subprocess
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from selenium import webdriver
@@ -14,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 from openai_functions import informed_deletion
 from process_text import process_pdf
-from chromium import Chromium
+
 
 
 class Crawler:
@@ -30,23 +31,34 @@ class Crawler:
     def __del__(self):
         self.driver.quit()
 
-    def create_driver(self):
-        """Setup a Selenium WebDriver instance using a pre-packaged ChromeDriver."""
-        print("Setting up Selenium WebDriver for AWS Lambda.")
+    def create_driver():
+        """Setup Selenium WebDriver for AWS Lambda using Sparticuz's Chromium."""
+        print("🔧 Setting up Chromium and Selenium WebDriver for AWS Lambda.")
 
-        # Use prebuilt Chrome binary from Lambda Layer
-        chrome_binary_path = Chromium.get_binary()
+        # Path to the compressed Chromium binary inside the Lambda Layer
+        compressed_chrome_path = "/opt/nodejs/node_modules/@sparticuz/chromium/bin/chromium.br"
+        extracted_chrome_path = "/tmp/chromium"  # Extracted binary path
+
+        # Extract Chromium if not already extracted
+        if not os.path.exists(extracted_chrome_path):
+            print(f"🔄 Extracting Chromium from {compressed_chrome_path} to {extracted_chrome_path}...")
+            subprocess.run(["brotli", "-d", compressed_chrome_path, "-o", extracted_chrome_path], check=True)
+            os.chmod(extracted_chrome_path, 0o755)  # Ensure it's executable
+
+        # Ensure ChromeDriver is included in the deployment package
         driver_path = "/var/task/chromedriver"
 
+        # Verify that ChromeDriver exists
         if not os.path.exists(driver_path):
-            raise FileNotFoundError(f"ChromeDriver not found at {driver_path}. Ensure it was bundled in the deployment package.")
+            raise FileNotFoundError(f"❌ ChromeDriver not found at {driver_path}. Ensure it was bundled in the deployment package.")
 
-        if not os.path.exists(chrome_binary_path):
-            raise FileNotFoundError(f"Chrome binary not found at {chrome_binary_path}. Ensure the Lambda Layer is attached.")
+        # Verify that the Chrome binary exists
+        if not os.path.exists(extracted_chrome_path):
+            raise FileNotFoundError(f"❌ Chrome binary not found at {extracted_chrome_path}. Extraction failed.")
 
         # Set Chrome options
         chrome_options = Options()
-        chrome_options.binary_location = chrome_binary_path
+        chrome_options.binary_location = extracted_chrome_path
         chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
         chrome_options.add_argument("--disable-infobars")
@@ -54,7 +66,7 @@ class Crawler:
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--single-process")
 
-        print("Launching Selenium WebDriver with pre-packaged ChromeDriver.")
+        print(f"✅ Launching Selenium WebDriver with Chromium at {extracted_chrome_path}")
 
         return webdriver.Chrome(
             service=Service(driver_path),
