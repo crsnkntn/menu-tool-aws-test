@@ -25,20 +25,9 @@ jobs:
       - name: Install dependencies
         run: |
           mkdir -p package
-
-          # Install dependencies
           pip install -r requirements.txt -t package --platform manylinux2014_x86_64 \
-              --implementation cp --python-version 3.13 --only-binary=:all:
-
-          # Download ChromeDriver and place it in package/
-          CHROMEDRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-          curl -Lo package/chromedriver "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver-linux64"
-          chmod +x package/chromedriver  # Ensure it's executable
-
-          # Copy Python scripts
+            --implementation cp --python-version 3.13 --only-binary=:all:
           cp *.py package/
-
-          # Create deployment ZIP
           cd package && zip -r ../index.zip . && cd ..
 
       # Step 4: Configure AWS credentials
