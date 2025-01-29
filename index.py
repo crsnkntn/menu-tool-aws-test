@@ -1,5 +1,6 @@
 import json
 import boto3
+import os
 from generate_menu_handler import GenerateMenuHandler
 
 def handler(event, context):
