@@ -43,16 +43,26 @@ jobs:
               --only-binary=:all: \
               --upgrade pydantic
 
-          # Move ChromeDriver into package directory
-          mv chromedriver package/
+      # Step 4: Install and verify ChromeDriver using `chromedriver-autoinstaller`
+      - name: Install ChromeDriver
+        run: |
+          python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install(path='./package')"
+          
+          # Ensure ChromeDriver exists
+          if [ ! -f package/chromedriver ]; then
+            echo "❌ ChromeDriver was not installed correctly!"
+            exit 1
+          fi
 
-          # Copy Python scripts to package directory
+      # Step 5: Copy Python scripts & Create deployment ZIP
+      - name: Prepare Deployment Package
+        run: |
           cp *.py package/
 
           # Create deployment ZIP
           cd package && zip -r ../index.zip . && cd ..
 
-      # Step 4: Configure AWS credentials
+      # Step 6: Configure AWS credentials
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
@@ -60,7 +70,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # Step 5: Deploy Lambda function
+      # Step 7: Deploy Lambda function
       - name: Deploy Lambda
         run: |
           aws lambda update-function-code \
