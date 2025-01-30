@@ -19,7 +19,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: 3.10  # Ensure compatibility with AWS Lambda
+          python-version: 3.13  # Ensure compatibility with AWS Lambda
 
       # Step 3: Install dependencies in a Lambda-compatible way
       - name: Install dependencies
