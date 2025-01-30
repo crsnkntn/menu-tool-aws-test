@@ -26,7 +26,7 @@ jobs:
         run: |
           mkdir -p package
 
-          # Install Python dependencies with Lambda-compatible settings
+          # Install dependencies for AWS Lambda
           pip install \
               --platform manylinux2014_x86_64 \
               --target=package \
@@ -43,10 +43,13 @@ jobs:
               --only-binary=:all: \
               --upgrade pydantic
 
+          # Ensure chromedriver-autoinstaller is installed
+          pip install chromedriver-autoinstaller --target=package
+
       # Step 4: Install and verify ChromeDriver using `chromedriver-autoinstaller`
       - name: Install ChromeDriver
         run: |
-          python -c "import chromedriver_autoinstaller; chromedriver_autoinstaller.install(path='./package')"
+          python -c "import sys; sys.path.append('./package'); import chromedriver_autoinstaller; chromedriver_autoinstaller.install(path='./package')"
           
           # Ensure ChromeDriver exists
           if [ ! -f package/chromedriver ]; then
