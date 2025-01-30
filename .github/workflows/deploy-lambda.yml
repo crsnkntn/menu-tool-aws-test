@@ -7,7 +7,7 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to AWS Lambda
+    name: Deploy to AWS Lambda (Python 3.13)
     runs-on: ubuntu-latest
 
     steps:
@@ -15,18 +15,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Python
-      - name: Set up Python
+      # Step 2: Set up Python 3.13
+      - name: Set up Python 3.13
         uses: actions/setup-python@v4
         with:
-          python-version: 3.13  # Ensure compatibility with AWS Lambda
+          python-version: 3.13  # ✅ AWS Lambda now supports Python 3.13
 
       # Step 3: Install dependencies in a Lambda-compatible way
       - name: Install dependencies
         run: |
           mkdir -p package
 
-          # Install dependencies for AWS Lambda
+          echo "🔍 Installing dependencies for AWS Lambda (Python 3.13)..."
+
           pip install \
               --platform manylinux2014_x86_64 \
               --target=package \
@@ -46,15 +47,27 @@ jobs:
           # Ensure chromedriver-autoinstaller is installed
           pip install chromedriver-autoinstaller --target=package
 
-      # Step 4: Install and verify ChromeDriver using `chromedriver-autoinstaller`
+      # Step 4: Install and verify ChromeDriver (with debug output)
       - name: Install ChromeDriver
         run: |
-          python -c "import sys; sys.path.append('./package'); import chromedriver_autoinstaller; chromedriver_autoinstaller.install(path='./package')"
-          
+          echo "🔍 Python Version:"
+          python --version  # Ensure Python 3.13 is used
+
+          echo "🔍 Checking Python PATH:"
+          python -c "import sys; print(sys.path)"  # Debugging Python path issues
+
+          echo "🔍 Installing ChromeDriver..."
+          python -c "import sys; sys.path.append('./package'); import chromedriver_autoinstaller; chromedriver_autoinstaller.install(path='./package', force=True)"
+
+          echo "🔍 Listing package directory:"
+          ls -l package  # Show contents of package folder
+
           # Ensure ChromeDriver exists
           if [ ! -f package/chromedriver ]; then
             echo "❌ ChromeDriver was not installed correctly!"
             exit 1
+          else
+            echo "✅ ChromeDriver installed successfully!"
           fi
 
       # Step 5: Copy Python scripts & Create deployment ZIP
@@ -73,7 +86,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # Step 7: Deploy Lambda function
+      # Step 7: Deploy Lambda function (Python 3.13)
       - name: Deploy Lambda
         run: |
           aws lambda update-function-code \
