@@ -47,7 +47,7 @@ jobs:
           # Ensure chromedriver-autoinstaller is installed and up-to-date
           pip install --upgrade chromedriver-autoinstaller --target=package
 
-      # Step 4: Install and verify ChromeDriver (Fix ChromeDriver Path Issue)
+      # Step 4: Install and verify ChromeDriver (Fixed for correct copying)
       - name: Install ChromeDriver
         run: |
           echo "🔍 Python Version:"
@@ -64,27 +64,27 @@ jobs:
           echo "✅ ChromeDriver installed at: $CHROMEDRIVER_PATH"
 
           echo "🔍 Checking ChromeDriver location..."
-          find / -name "chromedriver" 2>/dev/null  # Search for the file
+          find / -name "chromedriver" 2>/dev/null  # Search for all possible locations
 
-          echo "🔍 Moving ChromeDriver to package directory..."
+          echo "🔍 Validating ChromeDriver installation..."
           if [ -f "$CHROMEDRIVER_PATH" ]; then
             echo "✅ Found ChromeDriver at $CHROMEDRIVER_PATH"
             cp "$CHROMEDRIVER_PATH" package/chromedriver  # Copy instead of move
             chmod +x package/chromedriver
           else
-            echo "❌ ChromeDriver path not found!"
+            echo "❌ ChromeDriver path not found! Installation failed."
             exit 1
           fi
 
-          echo "🔍 Listing package directory:"
+          echo "🔍 Verifying package directory contents..."
           ls -l package  # Show contents of package folder
 
-          # Ensure ChromeDriver exists
-          if [ ! -f package/chromedriver ]; then
-            echo "❌ ChromeDriver was not installed correctly!"
-            exit 1
+          # Ensure ChromeDriver exists after copying
+          if [ -f package/chromedriver ]; then
+            echo "✅ ChromeDriver is now in the package directory and ready for Lambda!"
           else
-            echo "✅ ChromeDriver installed successfully!"
+            echo "❌ ChromeDriver was not copied correctly!"
+            exit 1
           fi
 
       # Step 5: Copy Python scripts & Create deployment ZIP
