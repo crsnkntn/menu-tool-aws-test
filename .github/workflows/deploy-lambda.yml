@@ -44,10 +44,10 @@ jobs:
               --only-binary=:all: \
               --upgrade pydantic
 
-          # Ensure chromedriver-autoinstaller is installed
-          pip install chromedriver-autoinstaller --target=package
+          # Ensure chromedriver-autoinstaller is installed and up-to-date
+          pip install --upgrade chromedriver-autoinstaller --target=package
 
-      # Step 4: Install and verify ChromeDriver (with debug output)
+      # Step 4: Install and verify ChromeDriver (without force=True)
       - name: Install ChromeDriver
         run: |
           echo "🔍 Python Version:"
@@ -57,7 +57,7 @@ jobs:
           python -c "import sys; print(sys.path)"  # Debugging Python path issues
 
           echo "🔍 Installing ChromeDriver..."
-          python -c "import sys; sys.path.append('./package'); import chromedriver_autoinstaller; chromedriver_autoinstaller.install(path='./package', force=True)"
+          python -c "import sys; sys.path.append('./package'); import chromedriver_autoinstaller; chromedriver_autoinstaller.install(path='./package')"
 
           echo "🔍 Listing package directory:"
           ls -l package  # Show contents of package folder
