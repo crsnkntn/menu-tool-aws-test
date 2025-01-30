@@ -1,10 +1,7 @@
 import time
 import re
 import os
-import shutil
 import requests
-import subprocess
-import brotli
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin, urlparse
 from selenium import webdriver
