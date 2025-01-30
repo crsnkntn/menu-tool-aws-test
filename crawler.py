@@ -31,23 +31,14 @@ class Crawler:
     def __del__(self):
         self.driver.quit()
 
-    def create_driver():
-        """Setup Selenium WebDriver for AWS Lambda using Sparticuz's Chromium."""
-        print("🔧 Setting up Chromium and Selenium WebDriver for AWS Lambda.")
+    def create_driver(self):
+        """Setup Selenium WebDriver for AWS Lambda using system-installed Chromium."""
+        print("🔧 Setting up Selenium WebDriver for AWS Lambda.")
 
-        # Path to the compressed Chromium binary inside the Lambda Layer
-        compressed_chrome_path = "/opt/nodejs/node_modules/@sparticuz/chromium/bin/chromium.br"
-        extracted_chrome_path = "/tmp/chromium"  # Extracted binary path
-
-        # Extract Chromium if not already extracted
-        if not os.path.exists(extracted_chrome_path):
-            print(f"🔄 Extracting Chromium from {compressed_chrome_path} to {extracted_chrome_path}...")
-            with open(compressed_chrome_path, "rb") as f:
-                compressed_data = f.read()
-            decompressed_data = brotli.decompress(compressed_data)
-            with open(extracted_chrome_path, "wb") as f:
-                f.write(decompressed_data)
-            os.chmod(extracted_chrome_path, 0o755)  # Ensure it's executable
+        # Ensure Chromium is available in the Lambda environment
+        chromium_path = "/usr/bin/chromium-browser"  # System-installed Chromium path
+        if not os.path.exists(chromium_path):
+            raise FileNotFoundError(f"❌ Chromium not found at {chromium_path}. Ensure it is installed.")
 
         # Ensure ChromeDriver is included in the deployment package
         driver_path = "/var/task/chromedriver"
@@ -56,21 +47,18 @@ class Crawler:
         if not os.path.exists(driver_path):
             raise FileNotFoundError(f"❌ ChromeDriver not found at {driver_path}. Ensure it was bundled in the deployment package.")
 
-        # Verify that the Chrome binary exists
-        if not os.path.exists(extracted_chrome_path):
-            raise FileNotFoundError(f"❌ Chrome binary not found at {extracted_chrome_path}. Extraction failed.")
-
         # Set Chrome options
         chrome_options = Options()
-        chrome_options.binary_location = extracted_chrome_path
-        chrome_options.add_argument("--headless=new")
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        chrome_options.add_argument("--disable-infobars")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.add_argument("--disable-dev-shm-usage")
-        chrome_options.add_argument("--single-process")
+        chrome_options.binary_location = chromium_path
+        chrome_options.add_argument("--headless")  # Run headless mode
+        chrome_options.add_argument("--no-sandbox")  # Required for Lambda
+        chrome_options.add_argument("--disable-gpu")  # Disable GPU hardware acceleration
+        chrome_options.add_argument("--disable-dev-shm-usage")  # Use shared memory
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Avoid bot detection
+        chrome_options.add_argument("--disable-infobars")  # Remove extra Chrome information bar
+        chrome_options.add_argument("--single-process")  # Optimize performance for Lambda
 
-        print(f"✅ Launching Selenium WebDriver with Chromium at {extracted_chrome_path}")
+        print(f"✅ Launching Selenium WebDriver with Chromium at {chromium_path}")
 
         return webdriver.Chrome(
             service=Service(driver_path),

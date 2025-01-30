@@ -26,16 +26,20 @@ jobs:
         run: |
           mkdir -p package
 
-          # Install dependencies
-          pip install -r requirements.txt -t package --platform manylinux2014_x86_64 \
-              --implementation cp --python-version 3.13 --only-binary=:all:
+          # Install Python dependencies
+          pip install -r requirements.txt -t package
 
-          # Download the latest ChromeDriver and place it in package/
+          # Install Chromium (headless browser for Selenium)
+          sudo apt update
+          sudo apt install -y chromium-browser
+
+          # Download the latest ChromeDriver
           CHROMEDRIVER_VERSION=$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)
-          curl -Lo package/chromedriver "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver-linux64"
-          chmod +x package/chromedriver  # Ensure ChromeDriver is executable
+          curl -Lo chromedriver "https://chromedriver.storage.googleapis.com/$CHROMEDRIVER_VERSION/chromedriver-linux64"
+          chmod +x chromedriver
+          mv chromedriver package/
 
-          # Copy Python scripts
+          # Copy Python scripts to package
           cp *.py package/
 
           # Create deployment ZIP

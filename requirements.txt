@@ -7,4 +7,4 @@ openai
 python-dotenv
 boto3
 pydantic
-brotli-python
+chromedriver-autoinstaller
