@@ -47,7 +47,7 @@ jobs:
           # Ensure chromedriver-autoinstaller is installed and up-to-date
           pip install --upgrade chromedriver-autoinstaller --target=package
 
-      # Step 4: Install and verify ChromeDriver (Debugging Added)
+      # Step 4: Install and verify ChromeDriver (Fix ChromeDriver Path Issue)
       - name: Install ChromeDriver
         run: |
           echo "🔍 Python Version:"
@@ -57,19 +57,23 @@ jobs:
           python -c "import sys; print(sys.path)"  # Debugging Python path issues
 
           echo "🔍 Installing ChromeDriver..."
-          python -c "import sys; sys.path.append('./package'); \
+          CHROMEDRIVER_PATH=$(python -c "import sys; sys.path.append('./package'); \
               import chromedriver_autoinstaller; \
-              chromedriver_path = chromedriver_autoinstaller.install(); \
-              print(f'✅ ChromeDriver installed at: {chromedriver_path}')"
+              print(chromedriver_autoinstaller.install())")
+
+          echo "✅ ChromeDriver installed at: $CHROMEDRIVER_PATH"
 
           echo "🔍 Checking ChromeDriver location..."
           find / -name "chromedriver" 2>/dev/null  # Search for the file
 
           echo "🔍 Moving ChromeDriver to package directory..."
-          CHROMEDRIVER_PATH=$(python -c "import sys; sys.path.append('./package'); import chromedriver_autoinstaller; print(chromedriver_autoinstaller.install())")
           if [ -f "$CHROMEDRIVER_PATH" ]; then
-            mv "$CHROMEDRIVER_PATH" package/chromedriver
+            echo "✅ Found ChromeDriver at $CHROMEDRIVER_PATH"
+            cp "$CHROMEDRIVER_PATH" package/chromedriver  # Copy instead of move
             chmod +x package/chromedriver
+          else
+            echo "❌ ChromeDriver path not found!"
+            exit 1
           fi
 
           echo "🔍 Listing package directory:"
