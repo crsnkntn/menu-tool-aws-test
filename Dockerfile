@@ -1,13 +1,19 @@
 # Use AWS Lambda base image for Python 3.13
 FROM public.ecr.aws/lambda/python:3.13
 
-# Install required system dependencies
-RUN yum install -y unzip curl wget tar xz
+# Install required system dependencies using apt-get (since Lambda images are Debian-based)
+RUN apt-get update && apt-get install -y \
+    unzip \
+    curl \
+    wget \
+    tar \
+    xz-utils \
+    && rm -rf /var/lib/apt/lists/*
 
 # Install Google Chrome
-RUN curl -SL https://dl.google.com/linux/direct/google-chrome-stable_current_x86_64.rpm -o chrome.rpm && \
-    yum install -y ./chrome.rpm && \
-    rm -rf chrome.rpm
+RUN curl -SL https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -o chrome.deb && \
+    apt-get install -y ./chrome.deb && \
+    rm -rf chrome.deb
 
 # Install ChromeDriver
 RUN curl -SL https://chromedriver.storage.googleapis.com/$(curl -sS https://chromedriver.storage.googleapis.com/LATEST_RELEASE)/chromedriver_linux64.zip -o chromedriver.zip && \
@@ -27,4 +33,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Set Lambda function handler
-CMD ["handler.handler"]
+CMD ["index.handler"]
