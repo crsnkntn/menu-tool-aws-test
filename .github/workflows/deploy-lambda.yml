@@ -7,105 +7,37 @@ on:
 
 jobs:
   deploy:
-    name: Deploy to AWS Lambda (Python 3.13)
+    name: Deploy to AWS Lambda with Docker
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout code
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Step 2: Set up Python 3.13
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.13  # ✅ AWS Lambda now supports Python 3.13
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
 
-      # Step 3: Install dependencies in a Lambda-compatible way
-      - name: Install dependencies
+      - name: Login to Amazon ECR
         run: |
-          mkdir -p package
+          aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com
 
-          echo "🔍 Installing dependencies for AWS Lambda (Python 3.13)..."
-
-          pip install \
-              --platform manylinux2014_x86_64 \
-              --target=package \
-              --implementation cp \
-              --python-version 3.13 \
-              --only-binary=:all: \
-              --upgrade -r requirements.txt
-
-          pip install \
-              --platform manylinux2014_x86_64 \
-              --target=package \
-              --implementation cp \
-              --python-version 3.13 \
-              --only-binary=:all: \
-              --upgrade pydantic
-
-          # Ensure chromedriver-autoinstaller is installed and up-to-date
-          pip install --upgrade chromedriver-autoinstaller --target=package
-
-      # Step 4: Install and verify ChromeDriver (Fix for correct copying)
-      - name: Install ChromeDriver
+      - name: Build and push Docker image
         run: |
-          echo "🔍 Python Version:"
-          python --version  # Ensure Python 3.13 is used
+          IMAGE_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/menu-tool-aws-test:latest"
 
-          echo "🔍 Checking Python PATH:"
-          python -c "import sys; print(sys.path)"  # Debugging Python path issues
+          echo "🔍 Building Docker image..."
+          docker build -t menu-tool-aws-test .
 
-          echo "🔍 Installing ChromeDriver..."
-          CHROMEDRIVER_PATH=$(python -c "import sys; sys.path.append('./package'); \
-              import chromedriver_autoinstaller; \
-              print(chromedriver_autoinstaller.install())")
+          echo "🔍 Tagging image..."
+          docker tag menu-tool-aws-test:latest $IMAGE_URI
 
-          echo "✅ ChromeDriver installed at: $CHROMEDRIVER_PATH"
+          echo "🚀 Pushing image to AWS ECR..."
+          docker push $IMAGE_URI
 
-          echo "🔍 Checking ChromeDriver location..."
-          find / -name "chromedriver" 2>/dev/null  # Search for all possible locations
-
-          echo "🔍 Moving ChromeDriver to package directory..."
-          if [ -f "$CHROMEDRIVER_PATH" ]; then
-            echo "✅ Found ChromeDriver at $CHROMEDRIVER_PATH"
-            cp "$CHROMEDRIVER_PATH" package/chromedriver  # Copy instead of move
-            chmod +x package/chromedriver
-          else
-            echo "❌ ChromeDriver path not found! Installation failed."
-            exit 1
-          fi
-
-          echo "🔍 Verifying package directory contents..."
-          ls -l package  # Show contents of package folder
-
-          # Final ChromeDriver verification
-          if [ -f package/chromedriver ]; then
-            echo "✅ ChromeDriver is now in the package directory and ready for Lambda!"
-          else
-            echo "❌ ChromeDriver was not copied correctly!"
-            exit 1
-          fi
-
-      # Step 5: Copy Python scripts & Create deployment ZIP
-      - name: Prepare Deployment Package
+      - name: Deploy to AWS Lambda
         run: |
-          cp *.py package/
+          IMAGE_URI="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ secrets.AWS_REGION }}.amazonaws.com/menu-tool-aws-test:latest"
 
-          # Create deployment ZIP
-          cd package && zip -r ../index.zip . && cd ..
-
-      # Step 6: Configure AWS credentials
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v3
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
-
-      # Step 7: Deploy Lambda function (Python 3.13)
-      - name: Deploy Lambda
-        run: |
-          aws lambda update-function-code \
-            --function-name menu-tool-function \
-            --zip-file fileb://index.zip
+          echo "🚀 Deploying image to AWS Lambda..."
+          aws lambda update-function-code --function-name menu-tool-function \
+            --image-uri $IMAGE_URI
