@@ -29,38 +29,27 @@ class Crawler:
         self.driver.quit()
 
     def create_driver(self):
-        """Setup Selenium WebDriver for AWS Lambda using system-installed Chromium."""
-        print("🔧 Setting up Selenium WebDriver for AWS Lambda.")
+        """Setup Selenium WebDriver with Headless Chrome."""
+        print("🔧 Initializing Selenium WebDriver...")
 
-        # Ensure Chromium is available in the Lambda environment
-        chromium_path = "/usr/bin/chromium-browser"  # System-installed Chromium path
-        if not os.path.exists(chromium_path):
-            raise FileNotFoundError(f"❌ Chromium not found at {chromium_path}. Ensure it is installed.")
-
-        # Ensure ChromeDriver is included in the deployment package
-        driver_path = "/var/task/chromedriver"
-
-        # Verify that ChromeDriver exists
-        if not os.path.exists(driver_path):
-            raise FileNotFoundError(f"❌ ChromeDriver not found at {driver_path}. Ensure it was bundled in the deployment package.")
+        # Define paths for Chrome and ChromeDriver
+        chromium_path = "/usr/bin/google-chrome"  # Use the standard system-installed Chrome path
+        driver_path = "/usr/local/bin/chromedriver"  # Standard location for ChromeDriver
 
         # Set Chrome options
         chrome_options = Options()
         chrome_options.binary_location = chromium_path
-        chrome_options.add_argument("--headless")  # Run headless mode
-        chrome_options.add_argument("--no-sandbox")  # Required for Lambda
+        chrome_options.add_argument("--headless")  # Run in headless mode
+        chrome_options.add_argument("--no-sandbox")  # Required for AWS Lambda/EC2
+        chrome_options.add_argument("--disable-dev-shm-usage")  # Avoid shared memory issues
         chrome_options.add_argument("--disable-gpu")  # Disable GPU hardware acceleration
-        chrome_options.add_argument("--disable-dev-shm-usage")  # Use shared memory
-        chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Avoid bot detection
-        chrome_options.add_argument("--disable-infobars")  # Remove extra Chrome information bar
-        chrome_options.add_argument("--single-process")  # Optimize performance for Lambda
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Reduce bot detection
+        chrome_options.add_argument("--disable-infobars")  # Remove the Chrome info bar
 
-        print(f"✅ Launching Selenium WebDriver with Chromium at {chromium_path}")
+        print(f"✅ Launching WebDriver with Chrome at {chromium_path} and Driver at {driver_path}")
 
-        return webdriver.Chrome(
-            service=Service(driver_path),
-            options=chrome_options
-        )
+        # Initialize and return the WebDriver
+        return webdriver.Chrome(service=Service(driver_path), options=chrome_options)
 
     def scroll_until_loaded(self, timeout=10):
         """Scrolls the page until no new content is loaded."""

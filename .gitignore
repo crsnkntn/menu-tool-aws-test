@@ -10,4 +10,6 @@ local_test.py
 testing_output/
 
 *.pdf
-*.xlsx
+*.xlsx 
+
+chromedriver-linux64/

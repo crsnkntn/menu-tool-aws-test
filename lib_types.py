@@ -6,23 +6,11 @@ class ImageData(BaseModel):
     file: str
     filename: str
 
-
-class ListOfStrings(BaseModel):
-    strings: List[str]
-
-
 class MenuItemSmall(BaseModel):
     name: str
     description: str
     image: ImageData
     details: List[str]
-
-
-# Used as the response type for gpt
-class SmallResponse(BaseModel):
-    items: List[MenuItemSmall]
-    running_category_list: List[str]
-
 
 class MenuItemLarge(BaseModel):
     name: str
@@ -40,9 +28,16 @@ class MenuItemLarge(BaseModel):
     tagIds: List[str]
 
 
+# Response Templates for OpenAI API
+class SmallResponse(BaseModel):
+    items: List[MenuItemSmall]
+    running_category_list: List[str]
+
 class LargeResponse(BaseModel):
     items: List[MenuItemLarge]
 
-
 class InformedDeletionIndices(BaseModel):
     keep_these: List[int]
+
+class ListOfStrings(BaseModel):
+    strings: List[str]
