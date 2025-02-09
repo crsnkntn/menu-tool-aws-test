@@ -31,7 +31,6 @@ def process_pdf(pdf_url):
         return ""
 
 
-
 def filter_lines(lines: List[str], batch_size=50) -> List[str]:
     # Define in context since the lines object will be loaded nearby in memory
     def is_non_content(line: str) -> bool:

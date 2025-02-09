@@ -8,9 +8,10 @@ from openai_functions import *
 import re
 from tqdm import tqdm
 
+
 if __name__ == "__main__":
     url = "eatathazels"
-    
+
     handler = GenerateMenuHandler(url)
 
     response = handler.run()

@@ -29,6 +29,7 @@ def process_message(message):
 # Check for messages in the queue
 def poll_sqs():
     while True:
+        print("Checking for a message")
         response = sqs.receive_message(
             QueueUrl=QUEUE_URL,
             MaxNumberOfMessages=1,
@@ -37,6 +38,7 @@ def poll_sqs():
 
         messages = response.get('Messages', [])
         for message in messages:
+            print("Recieved a message")
             process_message(message)
 
             # Remove the message from the queue once processed

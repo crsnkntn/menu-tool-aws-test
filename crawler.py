@@ -34,7 +34,7 @@ class Crawler:
 
         # Define paths for Chrome and ChromeDriver
         chromium_path = "/usr/bin/google-chrome"  # Use the standard system-installed Chrome path
-        driver_path = "/usr/local/bin/chromedriver"  # Standard location for ChromeDriver
+        driver_path = "/usr/bin/chromedriver"  # Standard location for ChromeDriver
 
         # Set Chrome options
         chrome_options = Options()
@@ -225,15 +225,3 @@ class Crawler:
         """Return relevant links and PDF links as (link, content) pairs."""
         return list(self.relevant_links), list(self.pdf_links)
 
-
-
-# Example usage
-if __name__ == "__main__":
-    start_url = "https://bigboy.com"
-    crawler = Crawler(start_url)
-    crawler.crawl()
-    visited_links, relevant_links, pdf_links = crawler.get_results()
-
-    print(f"Visited Links: {len(visited_links)}")
-    print(f"Relevant Links: {len(relevant_links)}")
-    print(f"PDF Links: {len(pdf_links)}")
