@@ -1,5 +1,5 @@
 from typing import List, Dict, Any
-from lib_types import InformedDeletionIndices, MenuItemLarge, MenuItemSmall, SmallResponse, LargeResponse, ListOfStrings
+from basemodel_types import *
 from openai import OpenAI
 from dotenv import load_dotenv
 import os
@@ -31,7 +31,7 @@ def informed_deletion(
         response = client.beta.chat.completions.parse(
             model=gpt_model,
             messages=[{"role": "user", "content": prompt}],
-            response_format=InformedDeletionIndices,
+            response_format=ListOfInt,
         )
 
         kept_indices = response.choices[0].message.parsed.keep_these
@@ -88,7 +88,7 @@ def generate_items(
         response = client.beta.chat.completions.parse(
             model=gpt_model,
             messages=[{"role": "user", "content": prompt}],
-            response_format=SmallResponse,
+            response_format=PartialItemList,
         )
         return [item.dict() for item in response.choices[0].message.parsed.items], response.choices[0].message.parsed.running_category_list
     except Exception as e:
@@ -98,11 +98,11 @@ def generate_items(
 
 #TODO: HAVE A SEPARATE WINE/BEER/SPIRITS PROMPT
 def expand_item(
-    small_item: MenuItemSmall, 
+    small_item: PartialItem, 
     categories: List[str], 
     allergens: List[str], 
     dietary: List[str]
-) -> MenuItemLarge:
+) -> FullItem:
     NAME_INSTR = "Leave as is."
     DESCRIPTION_INSTR = "Leave as is. In the case of a wine/beer/spirit, the description should be the same as the flashcard back."
     IMAGE_INSTR = "Leave as is."
@@ -147,16 +147,14 @@ def expand_item(
         response = client.beta.chat.completions.parse(
             model=gpt_model,
             messages=[{"role": "user", "content": prompt}],
-            response_format=MenuItemLarge,
+            response_format=FullItem,
         )
 
-        #print(f"Raw response: {response}")
-
         parsed_response = response.choices[0].message.parsed
-        if isinstance(parsed_response, MenuItemLarge):
+        if isinstance(parsed_response, FullItem):
             return parsed_response
         else:
-            print("Response is invalid or not of type MenuItemLarge.")
+            print("Response is invalid or not of type FullItem.")
             return None
     except Exception as e:
         print(f"Error expanding item: {e}")
@@ -181,7 +179,7 @@ def standardize_categories(
         if isinstance(parsed_response, ListOfStrings):
             return parsed_response.strings
         else:
-            print("Response is invalid or not of type MenuItemLarge.")
+            print("Response is invalid or not of type FullItem.")
             return None
     except Exception as e:
         print(f"Error expanding item: {e}")
