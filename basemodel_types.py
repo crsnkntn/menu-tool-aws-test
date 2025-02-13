@@ -1,18 +1,25 @@
 from pydantic import BaseModel
 from typing import List
 
-# Define models
 class ImageData(BaseModel):
     file: str
     filename: str
 
-class MenuItemSmall(BaseModel):
+class PartialItem(BaseModel):
     name: str
     description: str
     image: ImageData
     details: List[str]
 
-class MenuItemLarge(BaseModel):
+    def __eq__(self, other):
+        if isinstance(other, PartialItem):
+            return self.name.strip().lower() == other.name.strip().lower()
+        return False
+
+    def __hash__(self):
+        return hash(self.name.strip().lower())
+
+class FullItem(BaseModel):
     name: str
     description: str
     image: ImageData
@@ -27,17 +34,14 @@ class MenuItemLarge(BaseModel):
     shiftIds: List[int]
     tagIds: List[str]
 
+class PartialItemList(BaseModel):
+    items: List[PartialItem]
 
-# Response Templates for OpenAI API
-class SmallResponse(BaseModel):
-    items: List[MenuItemSmall]
-    running_category_list: List[str]
+class FullItemList(BaseModel):
+    items: List[FullItem]
 
-class LargeResponse(BaseModel):
-    items: List[MenuItemLarge]
-
-class InformedDeletionIndices(BaseModel):
-    keep_these: List[int]
+class ListOfInt(BaseModel):
+    elements: List[int]
 
 class ListOfStrings(BaseModel):
-    strings: List[str]
+    elements: List[str]

@@ -1,0 +1,6 @@
+curl -X POST "https://ifdjwdqzu9.execute-api.us-east-1.amazonaws.com/prod/gen-menu" \
+     -H "Content-Type: application/json" \
+     -d '{"url": "https://example.com"}'
+
+
+curl -X GET "https://ifdjwdqzu9.execute-api.us-east-1.amazonaws.com/prod/get-menu?request_id=some_request_id"
